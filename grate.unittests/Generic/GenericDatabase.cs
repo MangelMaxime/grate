@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data.Common;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -9,6 +10,7 @@ using grate.Configuration;
 using grate.Migration;
 using grate.unittests.TestInfrastructure;
 using NUnit.Framework;
+using static System.StringSplitOptions;
 
 namespace grate.unittests.Generic;
 
@@ -28,6 +30,35 @@ public abstract class GenericDatabase
         IEnumerable<string> databases = await GetDatabases();
         databases.Should().Contain(db);
     }
+    
+    // [Test]
+    // public async Task Is_created_with_custom_script_if_custom_create_database_folder_exists()
+    // {
+    //     var scriptedDatabase = "CUSTOMSCRIPTEDDATABASE";
+    //
+    //     var config = GetConfiguration(scriptedDatabase, false);
+    //     var password = Context.AdminConnectionString
+    //         .Split(";", TrimEntries | RemoveEmptyEntries)
+    //         .SingleOrDefault(entry => entry.StartsWith("Password") || entry.StartsWith("Pwd"))?
+    //         .Split("=", TrimEntries | RemoveEmptyEntries)
+    //         .Last();
+    //
+    //     var customScript = Context.Syntax.CreateDatabase(scriptedDatabase, password);
+    //     TestConfig.WriteContent(Wrap(config.SqlFilesDirectory, config.Folders[KnownFolderKeys.BeforeMigration].Path), "createDatabase.sql", customScript);
+    //     try
+    //     {
+    //         await using var migrator = GetMigrator(config);
+    //         await migrator.Migrate();
+    //     }
+    //     catch
+    //     {
+    //         //Do nothing because database name is wrong due to custom script
+    //     }
+    //
+    //     IEnumerable<string> databases = await GetDatabases();
+    //     databases.Should().Contain(scriptedDatabase);
+    //
+    // }
 
     [Test]
     public async Task Is_not_created_if_not_confed()
@@ -179,5 +210,9 @@ public abstract class GenericDatabase
             SqlFilesDirectory = parent
         };
     }
+    
+    
+    protected static DirectoryInfo Wrap(DirectoryInfo root, string? subFolder) =>
+        new DirectoryInfo(Path.Combine(root.ToString(), subFolder ?? ""));
     
 }
