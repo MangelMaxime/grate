@@ -40,6 +40,6 @@ internal class OracleGrateTestContext : TestContextBase, IGrateTestContext, IDoc
         SleepTwoSeconds = "sys.dbms_session.sleep(2);"
     };
 
-    public string ExpectedVersionPrefix => "Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production";
+    public string ExpectedVersionPrefix => "Oracle Database 21c Express Edition Release 21.0.0.0.0 - Production";
     public bool SupportsCreateDatabase => true;
 }
