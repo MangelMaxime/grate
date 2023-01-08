@@ -9,6 +9,7 @@ using FluentAssertions;
 using grate.Configuration;
 using grate.Migration;
 using grate.unittests.TestInfrastructure;
+using Microsoft.Data.SqlClient;
 using NUnit.Framework;
 using static System.StringSplitOptions;
 
@@ -31,34 +32,37 @@ public abstract class GenericDatabase
         databases.Should().Contain(db);
     }
     
-    // [Test]
-    // public async Task Is_created_with_custom_script_if_custom_create_database_folder_exists()
-    // {
-    //     var scriptedDatabase = "CUSTOMSCRIPTEDDATABASE";
-    //
-    //     var config = GetConfiguration(scriptedDatabase, false);
-    //     var password = Context.AdminConnectionString
-    //         .Split(";", TrimEntries | RemoveEmptyEntries)
-    //         .SingleOrDefault(entry => entry.StartsWith("Password") || entry.StartsWith("Pwd"))?
-    //         .Split("=", TrimEntries | RemoveEmptyEntries)
-    //         .Last();
-    //
-    //     var customScript = Context.Syntax.CreateDatabase(scriptedDatabase, password);
-    //     TestConfig.WriteContent(Wrap(config.SqlFilesDirectory, config.Folders[KnownFolderKeys.BeforeMigration].Path), "createDatabase.sql", customScript);
-    //     try
-    //     {
-    //         await using var migrator = GetMigrator(config);
-    //         await migrator.Migrate();
-    //     }
-    //     catch
-    //     {
-    //         //Do nothing because database name is wrong due to custom script
-    //     }
-    //
-    //     IEnumerable<string> databases = await GetDatabases();
-    //     databases.Should().Contain(scriptedDatabase);
-    //
-    // }
+    [Test]
+    public virtual async Task Is_created_with_custom_script_if_custom_create_database_folder_exists()
+    {
+        var scriptedDatabase = "CUSTOMSCRIPTEDDATABASE";
+        var confedDatabase = "DEFAULTDATABASE";
+    
+        var config = GetConfiguration(confedDatabase, true);
+        var password = Context.AdminConnectionString
+            .Split(";", TrimEntries | RemoveEmptyEntries)
+            .SingleOrDefault(entry => entry.StartsWith("Password") || entry.StartsWith("Pwd"))?
+            .Split("=", TrimEntries | RemoveEmptyEntries)
+            .Last();
+    
+        var customScript = Context.Syntax.CreateDatabase(scriptedDatabase, password);
+        TestConfig.WriteContent(Wrap(config.SqlFilesDirectory, config.Folders?.CreateDatabase?.Path), "createDatabase.sql", customScript);
+        try
+        {
+            await using var migrator = GetMigrator(config);
+            await migrator.Migrate();
+        }
+        catch (DbException)
+        {
+            //Do nothing because database name is wrong due to custom script
+        }
+        
+        File.Delete(Path.Join(Wrap(config.SqlFilesDirectory, config.Folders?.CreateDatabase.Path).ToString(), "createDatabase.sql"));
+    
+        // The database should have been created by the custom script
+        IEnumerable<string> databases = await GetDatabases();
+        databases.Should().Contain(scriptedDatabase);
+    }
 
     [Test]
     public async Task Is_not_created_if_not_confed()
